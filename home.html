@@ -1,114 +1,132 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASHURA VIP TOOL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
   <style>
     body {
-      background-color: #000;
-      color: #fff;
-      font-family: 'Orbitron', sans-serif;
-      padding: 20px;
+      background: #000;
+      color: #0f0;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #0f0;
     }
     .container {
-      max-width: 500px;
-      margin: auto;
-      background: #111;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 0 15px red;
-    }
-    h2 {
+      display: flex;
+      flex-direction: column;
+      width: 80%;
+      max-width: 400px;
       text-align: center;
-      color: red;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      font-size: 16px;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      background: red;
-      color: white;
-      cursor: pointer;
-    }
-    .info {
-      margin: 10px 0;
     }
     .result {
       margin-top: 20px;
-      font-size: 24px;
-      color: lime;
-      text-align: center;
+      font-size: 1.5rem;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      background: #111;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #0c0;
+    }
+    @media (max-width: 480px) {
+      input, button {
+        width: 100%;
+      }
     }
   </style>
 </head>
-<body>  <div class="container">
-    <h2>ASHURA VIP TOOL</h2>
-    <div class="info">
-      <strong>UID:</strong> <span id="uid">Loading...</span><br>
-      <strong>Coins:</strong> <span id="coinCount">0</span>
+<body>
+  <h1>ASHURA VIP TOOL</h1>
+  <div class="container">
+    <div id="userInfo">
+      <p><strong>UID:</strong> <span id="uidDisplay"></span></p>
+      <p><strong>Coins:</strong> <span id="coinsDisplay"></span></p>
     </div>
-    <input type="text" id="period" placeholder="Enter 3 Digit Period (e.g. 123)">
-    <button onclick="getPrediction()">Get Prediction (Cost: 1 Coin)</button>
-    <div class="result" id="prediction"></div>
-  </div>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>  <script>
+
+    <input type="text" id="periodNumber" placeholder="Enter 3-digit period number" />
+    <button onclick="getPrediction()">Get Prediction</button>
+
+    <div class="result" id="predictionResult"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
       authDomain: "shurs-7d0bd.firebaseapp.com",
       databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
       projectId: "shurs-7d0bd",
-      storageBucket: "shurs-7d0bd.appspot.com",
+      storageBucket: "shurs-7d0bd.firebasestorage.app",
       messagingSenderId: "789512168670",
-      appId: "1:789512168670:web:cc1c52edf1031464768e4f"
+      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
     };
-
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
 
-    let currentUID = "";
+    let userUid = ''; // will store user UID after login
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUID = user.uid;
-        document.getElementById("uid").innerText = currentUID;
-        db.ref("vipKeys/" + currentUID + "/coins").on("value", snap => {
-          const coins = snap.val() || 0;
-          document.getElementById("coinCount").innerText = coins;
-        });
-      } else {
-        window.location.href = "login.html";
-      }
-    });
+    // Check if user is logged in (if UID exists in sessionStorage)
+    if (sessionStorage.getItem('uid')) {
+      userUid = sessionStorage.getItem('uid');
+      displayUserInfo(userUid);
+    } else {
+      window.location.replace("login.html"); // redirect to login if no UID found
+    }
 
-    function getPrediction() {
-      const input = document.getElementById("period").value.trim();
-      if (input.length !== 3 || isNaN(input)) {
-        alert("Please enter a valid 3-digit number.");
-        return;
-      }
-      db.ref("vipKeys/" + currentUID + "/coins").once("value", snap => {
-        let coins = snap.val() || 0;
-        if (coins < 1) {
-          alert("Insufficient coins.");
-          return;
+    function displayUserInfo(uid) {
+      db.ref("vip_keys/" + uid).get().then(snapshot => {
+        if (snapshot.exists()) {
+          const userInfo = snapshot.val();
+          document.getElementById('uidDisplay').textContent = uid;
+          document.getElementById('coinsDisplay').textContent = userInfo.coins;
+        } else {
+          alert("User data not found!");
         }
-        coins -= 1;
-        db.ref("vipKeys/" + currentUID).update({ coins });
-        const prediction = Math.random() < 0.5 ? "BIG" : "SMALL";
-        document.getElementById("prediction").innerText = prediction;
       });
     }
-  </script></body>
+
+    function getPrediction() {
+      const period = document.getElementById('periodNumber').value.trim();
+      const coins = parseInt(document.getElementById('coinsDisplay').textContent);
+
+      if (isNaN(period) || period.length !== 3) {
+        return alert("Please enter a valid 3-digit period number!");
+      }
+      if (coins <= 0) {
+        return alert("You do not have enough coins to get a prediction.");
+      }
+
+      // Update coins
+      const newCoins = coins - 1;
+
+      // Store the new coins value in the database
+      db.ref("vip_keys/" + userUid).update({
+        coins: newCoins
+      }).then(() => {
+        // Generate a random prediction (BIG or SMALL)
+        const prediction = Math.random() > 0.5 ? "BIG" : "SMALL";
+        document.getElementById('predictionResult').textContent = `Prediction: ${prediction}`;
+        document.getElementById('coinsDisplay').textContent = newCoins;
+      });
+    }
+  </script>
+</body>
 </html>
