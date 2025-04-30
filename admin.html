@@ -6,13 +6,18 @@
   <title>Admin - ASHURA VIP TOOL</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-    h1 { color: red; font-size: 36px; font-weight: bold; margin-bottom: 30px; text-align: center; }
-    .input-container { width: 100%; max-width: 400px; }
-    input, button { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
-    button { background-color: red; }
+    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
+    h1 { color: red; font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 30px; }
+    .input-container { width: 100%; max-width: 400px; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
+    button { background-color: red; font-weight: bold; }
     button:hover { background-color: darkred; }
-    #coinStatus { color: yellow; font-size: 16px; margin-top: 10px; }
+    #errorMessage { color: red; text-align: center; margin-top: 10px; }
+    .active-keys-list { width: 100%; max-width: 400px; margin-top: 20px; padding: 10px; background-color: #333; border-radius: 8px; }
+    .key-item { padding: 8px; border-bottom: 1px solid #444; }
+    .key-item:last-child { border-bottom: none; }
+    .key-item span { display: inline-block; margin-right: 10px; }
+    .key-item button { background-color: red; font-weight: bold; padding: 5px 10px; border-radius: 4px; }
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
       input, button { font-size: 16px; }
@@ -20,22 +25,38 @@
   </style>
 </head>
 <body>
+
   <h1>ASHURA VIP TOOL - Admin Panel</h1>
 
+  <!-- Key Generator Section -->
   <div class="input-container">
-    <input type="text" id="uid" placeholder="Enter UID to Manage Coins" />
-    <input type="number" id="coinsToAdd" placeholder="Coins to Add" />
-    <button onclick="addCoins()">Add Coins</button>
-
-    <input type="number" id="coinsToRemove" placeholder="Coins to Remove" />
-    <button onclick="removeCoins()">Remove Coins</button>
+    <input id="generateKey" type="text" placeholder="Generate VIP Key"/>
+    <button onclick="generateKey()">Generate Key</button>
   </div>
 
-  <div id="coinStatus"></div>
+  <!-- Validity Section -->
+  <div class="input-container">
+    <input id="validity" type="text" placeholder="Enter Validity (e.g. 3 HOURS, 1 DAY, 1 MONTH)" />
+    <button onclick="setValidity()">Set Validity</button>
+  </div>
+
+  <!-- Add/Delete Coins Section -->
+  <div class="input-container">
+    <input id="userKey" type="text" placeholder="Enter User VIP Key"/>
+    <input id="coinAmount" type="number" placeholder="Enter Coin Amount" />
+    <button onclick="addCoins()">Add Coins</button>
+    <button onclick="subtractCoins()">Subtract Coins</button>
+  </div>
+
+  <!-- Active Keys List -->
+  <div class="active-keys-list" id="keysList"></div>
+
+  <div id="errorMessage"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
       authDomain: "shurs-7d0bd.firebaseapp.com",
@@ -45,38 +66,131 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Generate Key
+    function generateKey() {
+      const newKey = "VIP" + Date.now(); // Simple key generator based on timestamp
+      db.ref("licenses/" + newKey).set({
+        uid: "uid-" + Date.now(), // Set UID as a simple example
+        validity: "3 DAYS", // Default validity, can be updated
+        coins: 3
+      }).then(() => {
+        alert("New VIP Key Generated: " + newKey);
+        listActiveKeys();
+      }).catch(error => {
+        alert("Error generating key: " + error.message);
+      });
+    }
+
+    // Set Key Validity
+    function setValidity() {
+      const key = document.getElementById("generateKey").value;
+      const validity = document.getElementById("validity").value;
+
+      if (validity && key) {
+        db.ref("licenses/" + key).update({
+          validity: validity
+        }).then(() => {
+          alert("Key validity updated successfully!");
+          listActiveKeys();
+        }).catch(error => {
+          alert("Error updating validity: " + error.message);
+        });
+      } else {
+        alert("Please enter both key and validity.");
+      }
+    }
+
+    // Add Coins
     function addCoins() {
-      const uid = document.getElementById('uid').value.trim();
-      const coins = parseInt(document.getElementById('coinsToAdd').value);
-      if (isNaN(coins) || coins <= 0) return alert("Please enter a valid number of coins.");
+      const key = document.getElementById("userKey").value;
+      const coinAmount = parseInt(document.getElementById("coinAmount").value);
 
-      db.ref("licenses/" + uid).once("value").then(snapshot => {
-        if (snapshot.exists()) {
-          const currentCoins = snapshot.val().coins || 0;
-          db.ref("licenses/" + uid).update({ coins: currentCoins + coins });
-          document.getElementById("coinStatus").innerText = `Coins updated! Current Coins: ${currentCoins + coins}`;
-        } else {
-          alert("UID not found!");
-        }
+      if (key && !isNaN(coinAmount)) {
+        db.ref("licenses/" + key).once("value", snapshot => {
+          if (snapshot.exists()) {
+            const currentCoins = snapshot.val().coins;
+            db.ref("licenses/" + key).update({
+              coins: currentCoins + coinAmount
+            }).then(() => {
+              alert("Coins added successfully!");
+              listActiveKeys();
+            }).catch(error => {
+              alert("Error adding coins: " + error.message);
+            });
+          } else {
+            alert("VIP Key does not exist.");
+          }
+        });
+      } else {
+        alert("Please enter a valid key and coin amount.");
+      }
+    }
+
+    // Subtract Coins
+    function subtractCoins() {
+      const key = document.getElementById("userKey").value;
+      const coinAmount = parseInt(document.getElementById("coinAmount").value);
+
+      if (key && !isNaN(coinAmount)) {
+        db.ref("licenses/" + key).once("value", snapshot => {
+          if (snapshot.exists()) {
+            const currentCoins = snapshot.val().coins;
+            db.ref("licenses/" + key).update({
+              coins: currentCoins - coinAmount
+            }).then(() => {
+              alert("Coins subtracted successfully!");
+              listActiveKeys();
+            }).catch(error => {
+              alert("Error subtracting coins: " + error.message);
+            });
+          } else {
+            alert("VIP Key does not exist.");
+          }
+        });
+      } else {
+        alert("Please enter a valid key and coin amount.");
+      }
+    }
+
+    // List Active Keys
+    function listActiveKeys() {
+      db.ref("licenses").once("value", snapshot => {
+        const keysList = document.getElementById("keysList");
+        keysList.innerHTML = ""; // Clear current list
+
+        snapshot.forEach(childSnapshot => {
+          const key = childSnapshot.key;
+          const keyData = childSnapshot.val();
+          const keyElement = document.createElement("div");
+          keyElement.classList.add("key-item");
+
+          keyElement.innerHTML = `
+            <span><strong>Key:</strong> ${key}</span>
+            <span><strong>Validity:</strong> ${keyData.validity}</span>
+            <span><strong>Coins:</strong> ${keyData.coins}</span>
+            <button onclick="deleteKey('${key}')">Delete</button>
+          `;
+
+          keysList.appendChild(keyElement);
+        });
       });
     }
 
-    function removeCoins() {
-      const uid = document.getElementById('uid').value.trim();
-      const coins = parseInt(document.getElementById('coinsToRemove').value);
-      if (isNaN(coins) || coins <= 0) return alert("Please enter a valid number of coins.");
-
-      db.ref("licenses/" + uid).once("value").then(snapshot => {
-        if (snapshot.exists()) {
-          const currentCoins = snapshot.val().coins || 0;
-          const newCoins = Math.max(0, currentCoins - coins);
-          db.ref("licenses/" + uid).update({ coins: newCoins });
-          document.getElementById("coinStatus").innerText = `Coins updated! Current Coins: ${newCoins}`;
-        } else {
-          alert("UID not found!");
-        }
-      });
+    // Delete Key
+    function deleteKey(key) {
+      db.ref("licenses/" + key).remove()
+        .then(() => {
+          alert("Key deleted successfully!");
+          listActiveKeys();
+        })
+        .catch(error => {
+          alert("Error deleting key: " + error.message);
+        });
     }
+
+    // Load active keys on page load
+    window.onload = listActiveKeys;
+
   </script>
 </body>
 </html>
