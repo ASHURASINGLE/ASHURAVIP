@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VIP Key Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <style>
+    body {
+      background-color: black;
+      color: lime;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #111;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px lime;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input {
+      background: #222;
+      color: lime;
+    }
+
+    button {
+      background: red;
+      color: white;
+      cursor: pointer;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ENTER VIP KEY</h2>
+    <input type="text" id="vipKey" placeholder="Enter VIP Key">
+    <button onclick="login()">LOGIN</button>
+    <button onclick="window.location.href='https://buy.key.link'">BUY KEY</button>
+    <p id="error" class="error"></p>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
+      authDomain: "shurs-7d0bd.firebaseapp.com",
+      databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
+      projectId: "shurs-7d0bd",
+      storageBucket: "shurs-7d0bd.firebasestorage.app",
+      messagingSenderId: "789512168670",
+      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    function login() {
+      const key = document.getElementById("vipKey").value.trim();
+      if (key === "") return showError("Please enter a key");
+
+      firebase.database().ref("vip_keys/" + key).once("value").then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const now = Date.now();
+          if (now < data.validUntil) {
+            window.location.href = "home.html";
+          } else {
+            showError("Key expired");
+          }
+        } else {
+          showError("Invalid key");
+        }
+      });
+    }
+
+    function showError(msg) {
+      document.getElementById("error").innerText = msg;
+    }
+  </script>
+</body>
+</html>
