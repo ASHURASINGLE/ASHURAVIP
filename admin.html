@@ -4,89 +4,87 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel - ASHURA VIP TOOL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
   <style>
     body {
       background: #000;
-      color: #fff;
-      font-family: 'Orbitron', sans-serif;
-      padding: 20px;
+      color: #0f0;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
     }
-    .box {
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #0f0;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      width: 80%;
+      max-width: 400px;
+    }
+    input, select, button {
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 15px;
       background: #111;
-      border-radius: 15px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 15px red;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 5px;
     }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      font-size: 16px;
+    button:hover {
+      background: #0c0;
     }
-    button {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      background: red;
-      color: white;
-      margin-top: 10px;
-      cursor: pointer;
+    .key-list {
+      background: #222;
+      padding: 15px;
+      border-radius: 5px;
     }
-    .keyList {
-      max-height: 300px;
-      overflow-y: auto;
-      margin-top: 10px;
+    .key-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px;
     }
-    .keyItem {
-      padding: 8px;
-      border-bottom: 1px solid #444;
+    .key-item span {
+      color: #0f0;
+    }
+    @media (max-width: 480px) {
+      input, select, button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-
-  <h2>ASHURA VIP ADMIN PANEL</h2>
-
-  <!-- License Generator -->
-  <div class="box">
-    <h3>Generate VIP Key</h3>
-    <input type="text" id="newKey" placeholder="Enter new VIP key">
-    <select id="validity">
-      <option value="3HOUR">3 HOURS</option>
-      <option value="1DAY">1 DAY</option>
-      <option value="7DAYS">7 DAYS</option>
-      <option value="15DAYS">15 DAYS</option>
-      <option value="1MONTH">1 MONTH</option>
-      <option value="3MONTH">3 MONTHS</option>
-      <option value="1YEAR">1 YEAR</option>
-    </select>
-    <button onclick="generateKey()">Generate</button>
-  </div>
-
-  <!-- Coin Manager -->
-  <div class="box">
-    <h3>Manage Coins (by UID)</h3>
-    <input type="text" id="uidInput" placeholder="Enter User Key (UID)">
-    <input type="number" id="coinValue" placeholder="Enter coin value">
+  <h1>Admin Panel - ASHURA VIP TOOL</h1>
+  <div class="container">
+    <input type="text" id="uid" placeholder="Enter User UID" />
+    <input type="number" id="coinAmount" placeholder="Enter Coin Amount" />
     <button onclick="addCoins()">Add Coins</button>
-    <button onclick="removeCoins()">Remove Coins</button>
+    <button onclick="subtractCoins()">Subtract Coins</button>
+
+    <h2>Manage VIP Keys</h2>
+    <input type="text" id="vipKey" placeholder="Enter VIP Key" />
+    <select id="validity">
+      <option value="3">3 Hours</option>
+      <option value="1">1 Day</option>
+      <option value="7">7 Days</option>
+      <option value="15">15 Days</option>
+      <option value="30">1 Month</option>
+      <option value="90">3 Months</option>
+      <option value="365">1 Year</option>
+    </select>
+    <button onclick="generateKey()">Generate VIP Key</button>
+
+    <div class="key-list" id="keyList"></div>
   </div>
 
-  <!-- Active Keys -->
-  <div class="box">
-    <h3>Active Keys</h3>
-    <div class="keyList" id="keyList"></div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -94,83 +92,94 @@
       authDomain: "shurs-7d0bd.firebaseapp.com",
       databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
       projectId: "shurs-7d0bd",
-      storageBucket: "shurs-7d0bd.appspot.com",
+      storageBucket: "shurs-7d0bd.firebasestorage.app",
       messagingSenderId: "789512168670",
-      appId: "1:789512168670:web:cc1c52edf1031464768e4f"
+      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function getExpiry(duration) {
-      const now = Date.now();
-      const hour = 3600000;
-      const day = 24 * hour;
-      switch (duration) {
-        case "3HOUR": return now + (3 * hour);
-        case "1DAY": return now + day;
-        case "7DAYS": return now + 7 * day;
-        case "15DAYS": return now + 15 * day;
-        case "1MONTH": return now + 30 * day;
-        case "3MONTH": return now + 90 * day;
-        case "1YEAR": return now + 365 * day;
-        default: return now;
-      }
+    function addCoins() {
+      const uid = document.getElementById("uid").value.trim();
+      const coins = parseInt(document.getElementById("coinAmount").value);
+
+      if (!uid || isNaN(coins)) return alert("Enter valid UID and coin amount");
+
+      db.ref("vip_keys/" + uid).get().then(snapshot => {
+        if (snapshot.exists()) {
+          const currentCoins = snapshot.val().coins || 3;
+          const newCoins = currentCoins + coins;
+          db.ref("vip_keys/" + uid).update({ coins: newCoins });
+          alert("Coins added successfully");
+        } else {
+          alert("User UID not found");
+        }
+      });
+    }
+
+    function subtractCoins() {
+      const uid = document.getElementById("uid").value.trim();
+      const coins = parseInt(document.getElementById("coinAmount").value);
+
+      if (!uid || isNaN(coins)) return alert("Enter valid UID and coin amount");
+
+      db.ref("vip_keys/" + uid).get().then(snapshot => {
+        if (snapshot.exists()) {
+          const currentCoins = snapshot.val().coins || 3;
+          const newCoins = currentCoins - coins;
+          db.ref("vip_keys/" + uid).update({ coins: newCoins });
+          alert("Coins subtracted successfully");
+        } else {
+          alert("User UID not found");
+        }
+      });
     }
 
     function generateKey() {
-      const key = document.getElementById("newKey").value.trim();
-      const validity = document.getElementById("validity").value;
-      if (!key) return alert("Enter key name");
-      const expiry = getExpiry(validity);
-      db.ref("vipKeys/" + key).set({
-        expiry,
-        coins: 3
-      }, () => {
-        alert("Key generated successfully!");
-        loadKeys();
+      const key = document.getElementById("vipKey").value.trim();
+      const validity = parseInt(document.getElementById("validity").value);
+
+      if (!key || isNaN(validity)) return alert("Enter valid VIP key and validity");
+
+      const expiryTime = Date.now() + (validity * 60 * 60 * 1000); // Expiry in hours
+
+      db.ref("vip_keys/" + key).set({
+        expiry: expiryTime,
+        coins: 3,
+        uid: key
+      }).then(() => {
+        alert("VIP Key generated successfully");
+        loadKeyList();
       });
     }
 
-    function addCoins() {
-      const uid = document.getElementById("uidInput").value.trim();
-      const coins = parseInt(document.getElementById("coinValue").value);
-      if (!uid || isNaN(coins)) return alert("Invalid input");
-      db.ref("vipKeys/" + uid + "/coins").get().then(snap => {
-        let current = snap.val() || 0;
-        db.ref("vipKeys/" + uid).update({ coins: current + coins });
-        alert("Coins added");
+    function loadKeyList() {
+      db.ref("vip_keys").get().then(snapshot => {
+        const keys = snapshot.val();
+        const keyListDiv = document.getElementById("keyList");
+        keyListDiv.innerHTML = '';
+
+        for (let key in keys) {
+          const keyData = keys[key];
+          const keyExpiry = new Date(keyData.expiry);
+          keyListDiv.innerHTML += `
+            <div class="key-item">
+              <span>Key: ${key} - Expiry: ${keyExpiry.toLocaleString()} - Coins: ${keyData.coins}</span>
+              <button onclick="deleteKey('${key}')">Delete</button>
+            </div>
+          `;
+        }
       });
     }
 
-    function removeCoins() {
-      const uid = document.getElementById("uidInput").value.trim();
-      const coins = parseInt(document.getElementById("coinValue").value);
-      if (!uid || isNaN(coins)) return alert("Invalid input");
-      db.ref("vipKeys/" + uid + "/coins").get().then(snap => {
-        let current = snap.val() || 0;
-        let newVal = Math.max(0, current - coins);
-        db.ref("vipKeys/" + uid).update({ coins: newVal });
-        alert("Coins removed");
+    function deleteKey(key) {
+      db.ref("vip_keys/" + key).remove().then(() => {
+        alert("Key deleted successfully");
+        loadKeyList();
       });
     }
 
-    function loadKeys() {
-      const list = document.getElementById("keyList");
-      list.innerHTML = "";
-      db.ref("vipKeys").once("value", snap => {
-        snap.forEach(child => {
-          const key = child.key;
-          const val = child.val();
-          const exp = new Date(val.expiry).toLocaleString();
-          const coins = val.coins || 0;
-          list.innerHTML += `<div class="keyItem"><b>${key}</b> | Expiry: ${exp} | Coins: ${coins}</div>`;
-        });
-      });
-    }
-
-    loadKeys();
+    loadKeyList(); // Initial load of VIP Keys
   </script>
-
 </body>
 </html>
