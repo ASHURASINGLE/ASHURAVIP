@@ -1,94 +1,114 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ASHURA VIP TOOL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
-    h1 { color: red; font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 30px; }
-    .info-container { width: 100%; max-width: 400px; margin-bottom: 20px; text-align: center; }
-    input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
-    button { background-color: red; font-weight: bold; }
-    button:hover { background-color: darkred; }
-    #prediction { font-size: 24px; color: yellow; margin-top: 20px; text-align: center; }
-    #coins { font-size: 18px; margin-top: 20px; color: yellow; text-align: center; }
-    #errorMessage { color: red; margin-top: 10px; text-align: center; }
-    @media (max-width: 768px) {
-      h1 { font-size: 28px; }
-      input, button { font-size: 16px; }
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #111;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px red;
+    }
+    h2 {
+      text-align: center;
+      color: red;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background: red;
+      color: white;
+      cursor: pointer;
+    }
+    .info {
+      margin: 10px 0;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 24px;
+      color: lime;
+      text-align: center;
     }
   </style>
 </head>
-<body>
-  <h1>ASHURA VIP TOOL</h1>
-
-  <div class="info-container">
-    <p><strong>UID:</strong> <span id="uid">Loading...</span></p>
-    <p><strong>Coins:</strong> <span id="coins">0</span></p>
-  </div>
-
-  <input id="periodInput" type="text" maxlength="3" placeholder="Enter 3-digit Period"/>
-  <button onclick="getPrediction()">GET Prediction</button>
-
-  <div id="prediction"></div>
-  <div id="errorMessage"></div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script>
+<body>  <div class="container">
+    <h2>ASHURA VIP TOOL</h2>
+    <div class="info">
+      <strong>UID:</strong> <span id="uid">Loading...</span><br>
+      <strong>Coins:</strong> <span id="coinCount">0</span>
+    </div>
+    <input type="text" id="period" placeholder="Enter 3 Digit Period (e.g. 123)">
+    <button onclick="getPrediction()">Get Prediction (Cost: 1 Coin)</button>
+    <div class="result" id="prediction"></div>
+  </div>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
       authDomain: "shurs-7d0bd.firebaseapp.com",
       databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
-      projectId: "shurs-7d0bd"
+      projectId: "shurs-7d0bd",
+      storageBucket: "shurs-7d0bd.appspot.com",
+      messagingSenderId: "789512168670",
+      appId: "1:789512168670:web:cc1c52edf1031464768e4f"
     };
+
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
-    const uid = localStorage.getItem("uid");
-    const vipKey = localStorage.getItem("vipKey");
+    let currentUID = "";
 
-    if (!uid || !vipKey) {
-      alert("You are not logged in!");
-      location.href = "login.html";  // Redirect to login if not logged in
-    }
-
-    db.ref("licenses/" + uid).on("value", snapshot => {
-      if (snapshot.exists()) {
-        document.getElementById('coins').innerText = snapshot.val().coins || 0;
-        document.getElementById('uid').innerText = uid;
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUID = user.uid;
+        document.getElementById("uid").innerText = currentUID;
+        db.ref("vipKeys/" + currentUID + "/coins").on("value", snap => {
+          const coins = snap.val() || 0;
+          document.getElementById("coinCount").innerText = coins;
+        });
+      } else {
+        window.location.href = "login.html";
       }
     });
 
     function getPrediction() {
-      const period = document.getElementById('periodInput').value;
-      const coins = parseInt(document.getElementById('coins').innerText);
-      const errorMessage = document.getElementById('errorMessage');
-
-      if (period.length !== 3 || isNaN(period)) {
-        errorMessage.innerText = "Please enter a valid 3-digit period number!";
+      const input = document.getElementById("period").value.trim();
+      if (input.length !== 3 || isNaN(input)) {
+        alert("Please enter a valid 3-digit number.");
         return;
       }
-
-      if (coins <= 0) {
-        errorMessage.innerText = "You don't have enough coins!";
-        return;
-      }
-
-      // Decrease 1 coin for prediction
-      const newCoins = coins - 1;
-
-      db.ref("licenses/" + uid).update({ coins: newCoins });
-
-      errorMessage.innerText = ''; // Reset error message
-
-      const prediction = Math.random() < 0.5 ? "BIG" : "SMALL";
-      document.getElementById('prediction').innerText = `Prediction: ${prediction}`;
-
-      document.getElementById('coins').innerText = newCoins;
+      db.ref("vipKeys/" + currentUID + "/coins").once("value", snap => {
+        let coins = snap.val() || 0;
+        if (coins < 1) {
+          alert("Insufficient coins.");
+          return;
+        }
+        coins -= 1;
+        db.ref("vipKeys/" + currentUID).update({ coins });
+        const prediction = Math.random() < 0.5 ? "BIG" : "SMALL";
+        document.getElementById("prediction").innerText = prediction;
+      });
     }
-  </script>
-</body>
+  </script></body>
 </html>
