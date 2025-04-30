@@ -6,12 +6,12 @@
   <title>Login - ASHURA VIP TOOL</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-    h1 { color: red; font-size: 36px; font-weight: bold; margin-bottom: 30px; text-align: center; }
-    .input-container { width: 100%; max-width: 400px; }
-    input { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
-    button { width: 100%; padding: 12px; background-color: red; color: white; border: none; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
+    h1 { color: red; font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 30px; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
+    button { background-color: red; font-weight: bold; }
     button:hover { background-color: darkred; }
+    #errorMessage { color: red; margin-top: 10px; text-align: center; }
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
       input, button { font-size: 16px; }
@@ -20,10 +20,14 @@
 </head>
 <body>
   <h1>ASHURA VIP TOOL</h1>
-  <div class="input-container">
-    <input type="text" id="vipKey" placeholder="Enter your VIP Key"/>
-    <button onclick="login()">Login</button>
+
+  <div>
+    <input id="vipKey" type="text" placeholder="Enter VIP Key" />
+    <button onclick="login()">LOGIN</button>
+    <button onclick="window.location.href='https://t.me/GodXAshura'">BUY KEY</button>
   </div>
+
+  <div id="errorMessage"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -38,16 +42,22 @@
     const db = firebase.database();
 
     function login() {
-      const vipKey = document.getElementById('vipKey').value.trim();
-      if (!vipKey) return alert('Please enter a VIP Key');
+      const vipKey = document.getElementById("vipKey").value;
+      const errorMessage = document.getElementById("errorMessage");
 
-      db.ref("licenses/" + vipKey).once("value").then(snapshot => {
+      if (!vipKey) {
+        errorMessage.innerText = "Please enter a valid VIP key!";
+        return;
+      }
+
+      db.ref("licenses/" + vipKey).once("value", snapshot => {
         if (snapshot.exists()) {
+          const uid = snapshot.val().uid;
+          localStorage.setItem("uid", uid);
           localStorage.setItem("vipKey", vipKey);
-          localStorage.setItem("uid", snapshot.val().uid); // Store UID
-          location.href = "home.html"; // Redirect to home page after successful login
+          location.href = "home.html"; // Redirect to home.html
         } else {
-          alert("Invalid VIP Key!");
+          errorMessage.innerText = "Invalid VIP key!";
         }
       });
     }
