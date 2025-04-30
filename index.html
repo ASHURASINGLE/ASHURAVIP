@@ -1,63 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - ASHURA VIP TOOL</title>
+  <title>ASHURA VIP LOGIN</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
-    h1 { color: red; font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 30px; }
-    input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
-    button { background-color: red; font-weight: bold; }
-    button:hover { background-color: darkred; }
-    #errorMessage { color: red; margin-top: 10px; text-align: center; }
-    @media (max-width: 768px) {
-      h1 { font-size: 28px; }
-      input, button { font-size: 16px; }
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      text-align: center;
+      background: #111;
+      padding: 20px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px red;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 18px;
+    }
+    button {
+      width: 90%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: red;
+      color: white;
+      cursor: pointer;
+    }
+    #buyKey {
+      background: #333;
+      color: red;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>ASHURA VIP TOOL</h1>
-
-  <div>
-    <input id="vipKey" type="text" placeholder="Enter VIP Key" />
+  <div class="container">
+    <h2>ASHURA VIP TOOL</h2>
+    <input type="text" id="vipKey" placeholder="Enter VIP Key" />
     <button onclick="login()">LOGIN</button>
-    <button onclick="window.location.href='https://t.me/GodXAshura'">BUY KEY</button>
+    <button id="buyKey" onclick="window.location.href='https://t.me/GodXAshura'">BUY KEY</button>
+    <p id="status"></p>
   </div>
 
-  <div id="errorMessage"></div>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
       authDomain: "shurs-7d0bd.firebaseapp.com",
       databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
-      projectId: "shurs-7d0bd"
+      projectId: "shurs-7d0bd",
+      storageBucket: "shurs-7d0bd.appspot.com",
+      messagingSenderId: "789512168670",
+      appId: "1:789512168670:web:cc1c52edf1031464768e4f"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     function login() {
-      const vipKey = document.getElementById("vipKey").value;
-      const errorMessage = document.getElementById("errorMessage");
+      const key = document.getElementById("vipKey").value.trim();
+      if (!key) return alert("Please enter VIP key");
 
-      if (!vipKey) {
-        errorMessage.innerText = "Please enter a valid VIP key!";
-        return;
-      }
-
-      db.ref("licenses/" + vipKey).once("value", snapshot => {
+      db.ref("vipKeys/" + key).once("value", snapshot => {
         if (snapshot.exists()) {
-          const uid = snapshot.val().uid;
-          localStorage.setItem("uid", uid);
-          localStorage.setItem("vipKey", vipKey);
-          location.href = "home.html"; // Redirect to home.html
+          const now = Date.now();
+          const expiry = snapshot.val().expiry || 0;
+          if (now < expiry) {
+            localStorage.setItem("vipKey", key);
+            localStorage.setItem("uid", key); // Use key as UID
+            window.location.href = "home.html";
+          } else {
+            document.getElementById("status").innerText = "Key expired";
+          }
         } else {
-          errorMessage.innerText = "Invalid VIP key!";
+          document.getElementById("status").innerText = "Invalid key";
         }
       });
     }
