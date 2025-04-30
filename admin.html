@@ -1,168 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin - License Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - ASHURA VIP TOOL</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background-color: #000;
-      color: #0f0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #f00;
-      margin-bottom: 30px;
-    }
-
-    .box {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 0 20px #0f0;
-    }
-
-    select, input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 6px;
-      font-size: 16px;
-      border: none;
-    }
-
-    button {
-      background-color: #f00;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .key-list {
-      margin-top: 30px;
-    }
-
-    .key-item {
-      background: #222;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .key-info {
-      text-align: left;
-    }
-
-    .delete-btn {
-      background: #f00;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-
-    @media (max-width: 600px) {
-      .box {
-        width: 100%;
-        padding: 15px;
-      }
-
-      select, input, button {
-        padding: 10px;
-      }
-
-      .key-item {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .delete-btn {
-        width: 100%;
-        margin-top: 10px;
-      }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    h1 { color: red; font-size: 36px; font-weight: bold; margin-bottom: 30px; text-align: center; }
+    .input-container { width: 100%; max-width: 400px; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
+    button { background-color: red; }
+    button:hover { background-color: darkred; }
+    #coinStatus { color: yellow; font-size: 16px; margin-top: 10px; }
+    @media (max-width: 768px) {
+      h1 { font-size: 28px; }
+      input, button { font-size: 16px; }
     }
   </style>
 </head>
 <body>
-  <h1>VIP License Key Generator</h1>
-  <div class="box">
-    <select id="validity">
-      <option value="3h">3 HOURS</option>
-      <option value="1d">1 DAY</option>
-      <option value="7d">7 DAYS</option>
-      <option value="15d">15 DAYS</option>
-      <option value="1m">1 MONTH</option>
-      <option value="3m">3 MONTHS</option>
-      <option value="1y">1 YEAR</option>
-    </select>
-    <button onclick="generateKey()">Generate License Key</button>
-    <div id="generatedKey"></div>
+  <h1>ASHURA VIP TOOL - Admin Panel</h1>
+
+  <div class="input-container">
+    <input type="text" id="uid" placeholder="Enter UID to Manage Coins" />
+    <input type="number" id="coinsToAdd" placeholder="Coins to Add" />
+    <button onclick="addCoins()">Add Coins</button>
+
+    <input type="number" id="coinsToRemove" placeholder="Coins to Remove" />
+    <button onclick="removeCoins()">Remove Coins</button>
   </div>
 
-  <div class="key-list" id="keyList"></div>
+  <div id="coinStatus"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
       authDomain: "shurs-7d0bd.firebaseapp.com",
       databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
-      projectId: "shurs-7d0bd",
-      storageBucket: "shurs-7d0bd.firebasestorage.app",
-      messagingSenderId: "789512168670",
-      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
+      projectId: "shurs-7d0bd"
     };
     firebase.initializeApp(firebaseConfig);
-
     const db = firebase.database();
 
-    function generateKey() {
-      const validity = document.getElementById("validity").value;
-      const key = Math.random().toString(36).substring(2, 10).toUpperCase();
+    function addCoins() {
+      const uid = document.getElementById('uid').value.trim();
+      const coins = parseInt(document.getElementById('coinsToAdd').value);
+      if (isNaN(coins) || coins <= 0) return alert("Please enter a valid number of coins.");
 
-      const now = Date.now();
-      let duration = 0;
-
-      switch (validity) {
-        case "3h": duration = 3 * 60 * 60 * 1000; break;
-        case "1d": duration = 1 * 24 * 60 * 60 * 1000; break;
-        case "7d": duration = 7 * 24 * 60 * 60 * 1000; break;
-        case "15d": duration = 15 * 24 * 60 * 60 * 1000; break;
-        case "1m": duration = 30 * 24 * 60 * 60 * 1000; break;
-        case "3m": duration = 90 * 24 * 60 * 60 * 1000; break;
-        case "1y": duration = 365 * 24 * 60 * 60 * 1000; break;
-      }
-
-      const validUntil = now + duration;
-
-      db.ref("vip_keys/" + key).set({
-        key: key,
-        validUntil: validUntil
-      }).then(() => {
-        document.getElementById("generatedKey").innerText = "Generated Key: " + key;
-        loadKeys();
+      db.ref("licenses/" + uid).once("value").then(snapshot => {
+        if (snapshot.exists()) {
+          const currentCoins = snapshot.val().coins || 0;
+          db.ref("licenses/" + uid).update({ coins: currentCoins + coins });
+          document.getElementById("coinStatus").innerText = `Coins updated! Current Coins: ${currentCoins + coins}`;
+        } else {
+          alert("UID not found!");
+        }
       });
     }
 
-    function loadKeys() {
-      const list = document.getElementById("keyList");
-      list.innerHTML = "<h2>Active License Keys</
+    function removeCoins() {
+      const uid = document.getElementById('uid').value.trim();
+      const coins = parseInt(document.getElementById('coinsToRemove').value);
+      if (isNaN(coins) || coins <= 0) return alert("Please enter a valid number of coins.");
+
+      db.ref("licenses/" + uid).once("value").then(snapshot => {
+        if (snapshot.exists()) {
+          const currentCoins = snapshot.val().coins || 0;
+          const newCoins = Math.max(0, currentCoins - coins);
+          db.ref("licenses/" + uid).update({ coins: newCoins });
+          document.getElementById("coinStatus").innerText = `Coins updated! Current Coins: ${newCoins}`;
+        } else {
+          alert("UID not found!");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
