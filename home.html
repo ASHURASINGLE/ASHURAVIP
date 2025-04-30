@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ASHURA VIP TOOL</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
+    h1 { color: red; font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 30px; }
+    .info-container { width: 100%; max-width: 400px; margin-bottom: 20px; text-align: center; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; }
+    button { background-color: red; font-weight: bold; }
+    button:hover { background-color: darkred; }
+    #prediction { font-size: 24px; color: yellow; margin-top: 20px; text-align: center; }
+    #coins { font-size: 18px; margin-top: 20px; color: yellow; text-align: center; }
+    #errorMessage { color: red; margin-top: 10px; text-align: center; }
+    @media (max-width: 768px) {
+      h1 { font-size: 28px; }
+      input, button { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>ASHURA VIP TOOL</h1>
+
+  <div class="info-container">
+    <p><strong>UID:</strong> <span id="uid">Loading...</span></p>
+    <p><strong>Coins:</strong> <span id="coins">0</span></p>
+  </div>
+
+  <input id="periodInput" type="text" maxlength="3" placeholder="Enter 3-digit Period"/>
+  <button onclick="getPrediction()">GET Prediction</button>
+
+  <div id="prediction"></div>
+  <div id="errorMessage"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
+      authDomain: "shurs-7d0bd.firebaseapp.com",
+      databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
+      projectId: "shurs-7d0bd"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const uid = localStorage.getItem("uid");
+    const vipKey = localStorage.getItem("vipKey");
+
+    if (!uid || !vipKey) {
+      alert("You are not logged in!");
+      location.href = "login.html";  // Redirect to login if not logged in
+    }
+
+    db.ref("licenses/" + uid).on("value", snapshot => {
+      if (snapshot.exists()) {
+        document.getElementById('coins').innerText = snapshot.val().coins || 0;
+        document.getElementById('uid').innerText = uid;
+      }
+    });
+
+    function getPrediction() {
+      const period = document.getElementById('periodInput').value;
+      const coins = parseInt(document.getElementById('coins').innerText);
+      const errorMessage = document.getElementById('errorMessage');
+
+      if (period.length !== 3 || isNaN(period)) {
+        errorMessage.innerText = "Please enter a valid 3-digit period number!";
+        return;
+      }
+
+      if (coins <= 0) {
+        errorMessage.innerText = "You don't have enough coins!";
+        return;
+      }
+
+      // Decrease 1 coin for prediction
+      const newCoins = coins - 1;
+
+      db.ref("licenses/" + uid).update({ coins: newCoins });
+
+      errorMessage.innerText = ''; // Reset error message
+
+      const prediction = Math.random() < 0.5 ? "BIG" : "SMALL";
+      document.getElementById('prediction').innerText = `Prediction: ${prediction}`;
+
+      document.getElementById('coins').innerText = newCoins;
+    }
+  </script>
+</body>
+</html>
