@@ -3,17 +3,25 @@
 <head>
   <title>Admin - License Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       background-color: #000;
       color: #0f0;
-      font-family: monospace;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
-      text-align: center;
     }
 
     h1 {
@@ -25,17 +33,18 @@
       background-color: #111;
       padding: 20px;
       border-radius: 10px;
-      max-width: 500px;
-      margin: auto;
+      width: 90%;
+      max-width: 600px;
       box-shadow: 0 0 20px #0f0;
     }
 
     select, input, button {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
       border-radius: 6px;
       font-size: 16px;
+      border: none;
     }
 
     button {
@@ -70,6 +79,27 @@
       padding: 6px 10px;
       cursor: pointer;
       border-radius: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .box {
+        width: 100%;
+        padding: 15px;
+      }
+
+      select, input, button {
+        padding: 10px;
+      }
+
+      .key-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .delete-btn {
+        width: 100%;
+        margin-top: 10px;
+      }
     }
   </style>
 </head>
@@ -135,37 +165,4 @@
 
     function loadKeys() {
       const list = document.getElementById("keyList");
-      list.innerHTML = "<h2>Active License Keys</h2>";
-      db.ref("vip_keys").once("value", (snapshot) => {
-        const keys = snapshot.val();
-        if (!keys) return;
-
-        Object.keys(keys).forEach(k => {
-          const data = keys[k];
-          const expiry = new Date(data.validUntil).toLocaleString();
-
-          const div = document.createElement("div");
-          div.className = "key-item";
-
-          div.innerHTML = `
-            <div class="key-info">
-              <strong>Key:</strong> ${data.key}<br>
-              <strong>Expires:</strong> ${expiry}
-            </div>
-            <button class="delete-btn" onclick="deleteKey('${data.key}')">DELETE</button>
-          `;
-          list.appendChild(div);
-        });
-      });
-    }
-
-    function deleteKey(key) {
-      if (confirm("Delete this key?")) {
-        db.ref("vip_keys/" + key).remove().then(() => loadKeys());
-      }
-    }
-
-    loadKeys();
-  </script>
-</body>
-</html>
+      list.innerHTML = "<h2>Active License Keys</
