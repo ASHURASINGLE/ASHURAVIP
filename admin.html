@@ -2,53 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel – User Management</title>
+  <title>ASHURA DT AI – Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
+      font-family: 'Segoe UI', sans-serif;
       background-color: #0f172a;
       color: white;
-      font-family: sans-serif;
     }
     .card {
-      background: #1e293b;
+      background-color: #1e293b;
       border-radius: 1rem;
-      padding: 2rem;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      padding: 1.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
   </style>
 </head>
 <body class="p-4">
-  <div class="max-w-4xl mx-auto space-y-8">
-    <h1 class="text-3xl font-bold text-center">🔐 Admin Panel</h1>
+  <div class="max-w-6xl mx-auto space-y-8">
 
-    <!-- Add Coins -->
+    <h1 class="text-4xl font-bold text-center text-yellow-400">ASHURA DT AI – Dashboard</h1>
+
+    <!-- Admin Controls -->
     <div class="card">
-      <h2 class="text-xl font-semibold mb-4">➕ Add Coins to User</h2>
-      <input id="deviceId" placeholder="6-digit Device ID" type="number" maxlength="6" class="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-700" />
-      <input id="coinsToAdd" placeholder="Coins to Add" type="number" class="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-700" />
-      <button id="addCoinsBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Add Coins</button>
-      <div id="result" class="mt-4 text-sm"></div>
+      <h2 class="text-2xl font-semibold mb-4">Admin Controls</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <input id="deviceId" type="number" placeholder="Enter 6-digit Device ID" maxlength="6" class="p-2 rounded bg-gray-800 border border-gray-600" />
+        <input id="coinsToAdd" type="number" placeholder="Coins to Add" class="p-2 rounded bg-gray-800 border border-gray-600" />
+        <button id="addCoinsBtn" class="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2">Add Coins</button>
+      </div>
+      <div id="result" class="mt-2 text-sm"></div>
     </div>
 
-    <!-- Total Users & Management -->
+    <!-- Users Table -->
     <div class="card">
-      <h2 class="text-xl font-semibold mb-4">📊 Total Users Overview</h2>
-      <p class="mb-2">👥 Total Users: <span id="totalUsers" class="text-yellow-400 font-bold">0</span></p>
-      <div class="overflow-x-auto max-h-80 overflow-y-auto">
-        <table class="min-w-full text-sm bg-gray-800 rounded">
-          <thead class="bg-gray-700 text-left">
+      <h2 class="text-2xl font-semibold mb-4">📊 User Stats</h2>
+      <p>Total Users: <span id="totalUsers" class="text-yellow-400 font-bold">0</span></p>
+      <div class="overflow-x-auto max-h-80 overflow-y-auto mt-4">
+        <table class="min-w-full bg-gray-800 text-sm rounded">
+          <thead class="bg-gray-700">
             <tr>
-              <th class="p-2">Device ID</th>
-              <th class="p-2">Coins</th>
-              <th class="p-2">Actions</th>
+              <th class="p-2 text-left">Device ID</th>
+              <th class="p-2 text-left">Coins</th>
+              <th class="p-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody id="userTableBody"></tbody>
         </table>
       </div>
     </div>
+
   </div>
 
   <!-- Firebase -->
@@ -57,7 +61,7 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyApx8U3Mr8DqEcD0TslX-OVmXyEZDoXTIA",
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
       authDomain: "ashurastore.firebaseapp.com",
       databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
       projectId: "ashurastore",
@@ -117,7 +121,6 @@
         const keys = Object.keys(users);
         totalUsersSpan.innerText = keys.length;
 
-        // Sort by coins (descending)
         const sorted = keys.map(k => ({
           id: k,
           coins: users[k].coins || 0
