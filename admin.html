@@ -2,184 +2,145 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Panel - ASHURA VIP TOOL</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+  <title>Admin Panel – User Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background: #000;
-      color: #0f0;
-      font-family: 'Share Tech Mono', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
+      background-color: #0f172a;
+      color: white;
+      font-family: sans-serif;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 30px;
-      text-shadow: 0 0 10px #0f0;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      width: 80%;
-      max-width: 400px;
-    }
-    input, select, button {
-      padding: 10px;
-      font-size: 1rem;
-      margin-bottom: 15px;
-      background: #111;
-      color: #0f0;
-      border: 1px solid #0f0;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: #0c0;
-    }
-    .key-list {
-      background: #222;
-      padding: 15px;
-      border-radius: 5px;
-    }
-    .key-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px;
-    }
-    .key-item span {
-      color: #0f0;
-    }
-    @media (max-width: 480px) {
-      input, select, button {
-        width: 100%;
-      }
+    .card {
+      background: #1e293b;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     }
   </style>
 </head>
-<body>
-  <h1>Admin Panel - ASHURA VIP TOOL</h1>
-  <div class="container">
-    <input type="text" id="uid" placeholder="Enter User UID" />
-    <input type="number" id="coinAmount" placeholder="Enter Coin Amount" />
-    <button onclick="addCoins()">Add Coins</button>
-    <button onclick="subtractCoins()">Subtract Coins</button>
+<body class="p-4">
+  <div class="max-w-4xl mx-auto space-y-8">
+    <h1 class="text-3xl font-bold text-center">🔐 Admin Panel</h1>
 
-    <h2>Manage VIP Keys</h2>
-    <input type="text" id="vipKey" placeholder="Enter VIP Key" />
-    <select id="validity">
-      <option value="3">3 Hours</option>
-      <option value="1">1 Day</option>
-      <option value="7">7 Days</option>
-      <option value="15">15 Days</option>
-      <option value="30">1 Month</option>
-      <option value="90">3 Months</option>
-      <option value="365">1 Year</option>
-    </select>
-    <button onclick="generateKey()">Generate VIP Key</button>
+    <!-- Add Coins -->
+    <div class="card">
+      <h2 class="text-xl font-semibold mb-4">➕ Add Coins to User</h2>
+      <input id="deviceId" placeholder="6-digit Device ID" type="number" maxlength="6" class="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-700" />
+      <input id="coinsToAdd" placeholder="Coins to Add" type="number" class="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-700" />
+      <button id="addCoinsBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Add Coins</button>
+      <div id="result" class="mt-4 text-sm"></div>
+    </div>
 
-    <div class="key-list" id="keyList"></div>
+    <!-- Total Users & Management -->
+    <div class="card">
+      <h2 class="text-xl font-semibold mb-4">📊 Total Users Overview</h2>
+      <p class="mb-2">👥 Total Users: <span id="totalUsers" class="text-yellow-400 font-bold">0</span></p>
+      <div class="overflow-x-auto max-h-80 overflow-y-auto">
+        <table class="min-w-full text-sm bg-gray-800 rounded">
+          <thead class="bg-gray-700 text-left">
+            <tr>
+              <th class="p-2">Device ID</th>
+              <th class="p-2">Coins</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
-      authDomain: "shurs-7d0bd.firebaseapp.com",
-      databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
-      projectId: "shurs-7d0bd",
-      storageBucket: "shurs-7d0bd.firebasestorage.app",
-      messagingSenderId: "789512168670",
-      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
+      apiKey: "AIzaSyApx8U3Mr8DqEcD0TslX-OVmXyEZDoXTIA",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abc123def456"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function addCoins() {
-      const uid = document.getElementById("uid").value.trim();
-      const coins = parseInt(document.getElementById("coinAmount").value);
+    const deviceIdInput = document.getElementById('deviceId');
+    const coinsInput = document.getElementById('coinsToAdd');
+    const resultDiv = document.getElementById('result');
+    const addBtn = document.getElementById('addCoinsBtn');
+    const totalUsersSpan = document.getElementById('totalUsers');
+    const userTableBody = document.getElementById('userTableBody');
 
-      if (!uid || isNaN(coins)) return alert("Enter valid UID and coin amount");
+    addBtn.addEventListener('click', () => {
+      const id = deviceIdInput.value.trim();
+      const coins = parseInt(coinsInput.value.trim());
 
-      db.ref("vip_keys/" + uid).get().then(snapshot => {
-        if (snapshot.exists()) {
-          const currentCoins = snapshot.val().coins || 3;
-          const newCoins = currentCoins + coins;
-          db.ref("vip_keys/" + uid).update({ coins: newCoins });
-          alert("Coins added successfully");
-        } else {
-          alert("User UID not found");
-        }
+      if (id.length !== 6 || isNaN(coins)) {
+        resultDiv.innerText = "❌ Invalid ID or coin amount.";
+        resultDiv.className = "text-red-400";
+        return;
+      }
+
+      const userRef = db.ref("users/" + id + "/coins");
+      userRef.once('value').then(snapshot => {
+        const current = snapshot.val() || 0;
+        const newTotal = current + coins;
+        userRef.set(newTotal).then(() => {
+          resultDiv.innerText = `✅ ${coins} coins added. New total: ${newTotal}`;
+          resultDiv.className = "text-green-400";
+          loadUsers();
+        });
+      }).catch(error => {
+        resultDiv.innerText = "❌ Error: " + error.message;
+        resultDiv.className = "text-red-400";
       });
+    });
+
+    function deleteUser(id) {
+      if (confirm(`Are you sure you want to delete device ID ${id}?`)) {
+        db.ref("users/" + id).remove().then(() => loadUsers());
+      }
     }
 
-    function subtractCoins() {
-      const uid = document.getElementById("uid").value.trim();
-      const coins = parseInt(document.getElementById("coinAmount").value);
-
-      if (!uid || isNaN(coins)) return alert("Enter valid UID and coin amount");
-
-      db.ref("vip_keys/" + uid).get().then(snapshot => {
-        if (snapshot.exists()) {
-          const currentCoins = snapshot.val().coins || 3;
-          const newCoins = currentCoins - coins;
-          db.ref("vip_keys/" + uid).update({ coins: newCoins });
-          alert("Coins subtracted successfully");
-        } else {
-          alert("User UID not found");
-        }
-      });
+    function resetUserCoins(id) {
+      db.ref("users/" + id + "/coins").set(0).then(() => loadUsers());
     }
 
-    function generateKey() {
-      const key = document.getElementById("vipKey").value.trim();
-      const validity = parseInt(document.getElementById("validity").value);
+    function loadUsers() {
+      db.ref("users").once("value").then(snapshot => {
+        const users = snapshot.val() || {};
+        const keys = Object.keys(users);
+        totalUsersSpan.innerText = keys.length;
 
-      if (!key || isNaN(validity)) return alert("Enter valid VIP key and validity");
+        // Sort by coins (descending)
+        const sorted = keys.map(k => ({
+          id: k,
+          coins: users[k].coins || 0
+        })).sort((a, b) => b.coins - a.coins);
 
-      const expiryTime = Date.now() + (validity * 60 * 60 * 1000); // Expiry in hours
-
-      db.ref("vip_keys/" + key).set({
-        expiry: expiryTime,
-        coins: 3,
-        uid: key
-      }).then(() => {
-        alert("VIP Key generated successfully");
-        loadKeyList();
-      });
-    }
-
-    function loadKeyList() {
-      db.ref("vip_keys").get().then(snapshot => {
-        const keys = snapshot.val();
-        const keyListDiv = document.getElementById("keyList");
-        keyListDiv.innerHTML = '';
-
-        for (let key in keys) {
-          const keyData = keys[key];
-          const keyExpiry = new Date(keyData.expiry);
-          keyListDiv.innerHTML += `
-            <div class="key-item">
-              <span>Key: ${key} - Expiry: ${keyExpiry.toLocaleString()} - Coins: ${keyData.coins}</span>
-              <button onclick="deleteKey('${key}')">Delete</button>
-            </div>
+        userTableBody.innerHTML = "";
+        sorted.forEach(user => {
+          const row = document.createElement('tr');
+          row.className = "border-b border-gray-600";
+          row.innerHTML = `
+            <td class="p-2">${user.id}</td>
+            <td class="p-2 text-yellow-300 font-semibold">${user.coins}</td>
+            <td class="p-2 space-x-2">
+              <button onclick="resetUserCoins('${user.id}')" class="bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-white text-xs">Reset</button>
+              <button onclick="deleteUser('${user.id}')" class="bg-red-500 hover:bg-red-600 px-2 py-1 rounded text-white text-xs">Delete</button>
+            </td>
           `;
-        }
+          userTableBody.appendChild(row);
+        });
       });
     }
 
-    function deleteKey(key) {
-      db.ref("vip_keys/" + key).remove().then(() => {
-        alert("Key deleted successfully");
-        loadKeyList();
-      });
-    }
-
-    loadKeyList(); // Initial load of VIP Keys
+    window.onload = loadUsers;
   </script>
 </body>
 </html>
