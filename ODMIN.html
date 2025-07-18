@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - AI PREDICTION</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1c1f23;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      color: #58a6ff;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    label, input, button, textarea {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background: #2f353d;
+      color: white;
+    }
+    button {
+      background-color: #238636;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2ea043;
+    }
+    #log {
+      margin-top: 20px;
+      background: #161b22;
+      padding: 10px;
+      border-radius: 5px;
+      white-space: pre-line;
+      font-size: 14px;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 24px;
+      }
+      .container {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🛠 AI Prediction - Admin Panel</h1>
+
+  <div class="container">
+    <label for="licenseKey">🔐 Add License Key</label>
+    <input type="text" id="licenseKey" placeholder="e.g. ASHURA2K">
+
+    <label for="validityDate">🗓 License Validity Date (YYYY-MM-DD)</label>
+    <input type="date" id="validityDate" placeholder="Enter expiration date">
+
+    <button onclick="setLicense()">Save License Key</button>
+
+    <label for="verifiedUsers">👤 Verified Users (comma-separated user IDs)</label>
+    <textarea id="verifiedUsers" rows="5" placeholder="12345678, 87654321"></textarea>
+    
+    <button onclick="saveUsers()">Save Verified Users</button>
+
+    <div id="log">🔄 Loading data...</div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCeCuaG-Fk6AHMS24ozaEj9KBnra_53v5g",
+      authDomain: "foxxi-cdb87.firebaseapp.com",
+      databaseURL: "https://foxxi-cdb87-default-rtdb.firebaseio.com",
+      projectId: "foxxi-cdb87",
+      storageBucket: "foxxi-cdb87.appspot.com",
+      messagingSenderId: "423683382738",
+      appId: "1:423683382738:android:add26fe48e17c2f6be3c0b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function setLicense() {
+      const licenseKey = document.getElementById('licenseKey').value.trim();
+      const validityDate = document.getElementById('validityDate').value.trim();
+      if (licenseKey && validityDate) {
+        db.ref("licenses").push({
+          key: licenseKey,
+          validity: validityDate
+        })
+        .then(() => log(`✅ License key added: ${licenseKey} (Valid until ${validityDate})`))
+        .catch(err => log(`❌ Error: ${err.message}`));
+      } else {
+        log("⚠️ License key and validity date are required.");
+      }
+    }
+
+    function saveUsers() {
+      const usersText = document.getElementById('verifiedUsers').value.trim();
+      const users = usersText.split(',').map(id => id.trim()).filter(Boolean);
+      db.ref("verified_users").set(users)
+        .then(() => log(`✅ Verified users updated: ${users.join(", ")}`))
+        .catch(err => log(`❌ Error: ${err.message}`));
+    }
+
+    function log(message) {
+      const logBox = document.getElementById('log');
+      logBox.textContent = message;
+    }
+
+    // Load initial values
+    db.ref("licenses").get().then(snapshot => {
+      if (snapshot.exists()) {
+        let licenses = snapshot.val();
+        log("✅ License data loaded.");
+        // You can loop over the licenses here if needed
+      }
+    });
+
+    db.ref("verified_users").get().then(snapshot => {
+      if (snapshot.exists()) {
+        const users = snapshot.val();
+        document.getElementById("verifiedUsers").value = users.join(", ");
+        log(prev => `${prev}\n✅ Verified users loaded.`);
+      }
+    });
+  </script>
+</body>
+</html>
